@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import uid2 from "uid2";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
@@ -17,18 +17,18 @@ const router = express.Router();
 if (process.env.CLOUDINARY_CLOUD_NAME) {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure:     true,
+    secure: true,
   });
 }
 
 const isCloudinaryConfigured = (): boolean =>
   Boolean(
     process.env.CLOUDINARY_URL ||
-      (process.env.CLOUDINARY_CLOUD_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_API_SECRET),
+    (process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET),
   );
 
 // Multer — stockage en mémoire, stream direct vers Cloudinary
@@ -54,22 +54,22 @@ router.post("/signup", (req: Request, res: Response) => {
     const hash = bcrypt.hashSync(req.body.password, 10);
     const newUser = new User({
       username: req.body.username,
-      email:    req.body.email,
+      email: req.body.email,
       password: hash,
-      token:    uid2(32),
-      nbWODs:   req.body.nbWODs ?? 0,
-      xp:       req.body.xp ?? 0,
-      picture:  req.body.picture ?? null,
+      token: uid2(32),
+      nbWODs: req.body.nbWODs ?? 0,
+      xp: req.body.xp ?? 0,
+      picture: req.body.picture ?? null,
     });
 
     newUser.save().then((saved) => {
       res.json({
-        result:   true,
-        token:    saved.token,
+        result: true,
+        token: saved.token,
         username: saved.username,
-        email:    saved.email,
-        xp:       saved.xp,
-        picture:  saved.picture ?? null,
+        email: saved.email,
+        xp: saved.xp,
+        picture: saved.picture ?? null,
       });
     });
   });
@@ -93,15 +93,18 @@ router.post("/signin", (req: Request, res: Response) => {
   User.findOne({ $or: [{ username }, { email }] }).then((data) => {
     if (data && bcrypt.compareSync(password, data.password)) {
       res.json({
-        result:   true,
-        token:    data.token,
+        result: true,
+        token: data.token,
         username: data.username,
-        email:    data.email,
-        xp:       data.xp,
-        picture:  data.picture ?? null,
+        email: data.email,
+        xp: data.xp,
+        picture: data.picture ?? null,
       });
     } else {
-      res.json({ result: false, error: "User not found or incorrect password" });
+      res.json({
+        result: false,
+        error: "User not found or incorrect password",
+      });
     }
   });
 });
@@ -123,7 +126,12 @@ router.post(
         return;
       }
       if (!isCloudinaryConfigured()) {
-        res.status(500).json({ result: false, error: "Cloudinary is not configured on the server" });
+        res
+          .status(500)
+          .json({
+            result: false,
+            error: "Cloudinary is not configured on the server",
+          });
         return;
       }
 
@@ -138,10 +146,10 @@ router.post(
         (resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
             {
-              folder:          "profile_pictures",
-              public_id:       `user_${user._id}`,
-              overwrite:       true,
-              resource_type:   "image",
+              folder: "profile_pictures",
+              public_id: `user_${user._id}`,
+              overwrite: true,
+              resource_type: "image",
               transformation: [{ width: 200, height: 200, crop: "fill" }],
             },
             (error, result) => {
@@ -160,7 +168,12 @@ router.post(
       );
 
       if (!updated) {
-        res.status(404).json({ result: false, error: "User not found during picture update" });
+        res
+          .status(404)
+          .json({
+            result: false,
+            error: "User not found during picture update",
+          });
         return;
       }
 
@@ -169,7 +182,8 @@ router.post(
       console.error("Upload picture error:", error);
       res.status(500).json({
         result: false,
-        error: error instanceof Error ? error.message : "Cloudinary upload failed",
+        error:
+          error instanceof Error ? error.message : "Cloudinary upload failed",
       });
     }
   },
@@ -185,11 +199,11 @@ router.get("/me/:userToken", (req: Request, res: Response) => {
       return;
     }
     res.json({
-      result:   true,
+      result: true,
       username: user.username,
-      email:    user.email,
-      xp:       user.xp,
-      picture:  user.picture ?? null,
+      email: user.email,
+      xp: user.xp,
+      picture: user.picture ?? null,
     });
   });
 });
