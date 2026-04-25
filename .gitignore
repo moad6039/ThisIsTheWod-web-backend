@@ -57,5 +57,8 @@ typings/
 # dotenv environment variables file
 .env
 
+# Routes sensibles
+routes/users.ts
+
 # next.js build output
 .next

@@ -5,7 +5,7 @@ import debugLib from "debug";
 import app from "../app";
 
 const debug = debugLib("backend:server");
-const port = normalizePort(process.env.PORT || "3002");
+const port = normalizePort(process.env.PORT || "3000");
 
 app.set("port", port);
 

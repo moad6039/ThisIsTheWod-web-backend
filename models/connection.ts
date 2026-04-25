@@ -1,15 +1,30 @@
+// backend/models/connection.ts
+// Gère la connexion MongoDB — tous les logs de connexion sont ici.
+// Appelé une seule fois depuis app.ts au démarrage.
+
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 
-dotenv.config();
+export function connectDB(): void {
+  const uri = process.env.MONGODB_URI as string;
 
-const connectionString = process.env.CONNECTION_STRING as string;
+  if (!uri) {
+    console.error("❌ MONGODB_URI manquant dans .env");
+    process.exit(1);
+  }
 
-if (!connectionString) {
-  throw new Error("CONNECTION_STRING is not defined in .env");
+  mongoose
+    .connect(uri)
+    .then(() => console.log("✅ MongoDB connecté"))
+    .catch((err: Error) => {
+      console.error("❌ MongoDB erreur:", err.message);
+      process.exit(1);
+    });
+
+  mongoose.connection.on("disconnected", () =>
+    console.warn("⚠️  MongoDB déconnecté"),
+  );
+
+  mongoose.connection.on("reconnected", () =>
+    console.log("🔄 MongoDB reconnecté"),
+  );
 }
-
-mongoose
-  .connect(connectionString, { connectTimeoutMS: 2000 })
-  .then(() => console.log("Database connected to MongoDB"))
-  .catch((error: Error) => console.error(error));
